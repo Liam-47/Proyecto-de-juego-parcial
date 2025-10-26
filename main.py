@@ -24,3 +24,30 @@ def generate_map(seed=None, complexity=60):
     for _ in range(complexity):
         x = rnd.randint(1, MAP_W-2); y = rnd.randint(1, MAP_H-2); grid[y][x]=1
     return grid
+
+def generate_tone_wav(path, freq=440, duration=0.5, vol=0.2):
+    import wave, struct, math
+    sample_rate=220500; n=int(sample_rate*duration)
+    with wave.open(path,'w') as wf:
+        wf.setnchannels(1); wf.setsampwidth(2); wf.setframerate(sample_rate)
+        for i in range(n):
+            t=float(i)/sample_rate; val=int(vol*32767.0*math.sin(2*math.pi*freq*t)); wf.writeframesraw(struct.pack('<h',val))
+
+class Game:
+    def __init__(self):
+        pygame.init(); pygame.mixer.pre_init(44100,-16,2,512); pygame.mixer.init()
+        self.screen=pygame.display.set_mode(SCREEN_SIZE, pygame.FULLSCREEN); pygame.display.set_caption('cuadros asesinos')
+        self.clock=pygame.time.clock(); self.font=pygame.font.SysFont('Arial',20); self.bigfont=pygame.font.SysFont('Arial'60)
+        self.grid = generate_map(seed=int(time.time()), complexity=80)
+        self.player = Player((TILE*2, TILE*2)); self.enemies=pygame.sprite.Group(); self.spawn_enemies(4)
+
+        self.images = {}
+        try:
+            import pygame as _pg
+            self.images['player']=[_pg.image.load(os.path.join(IMG_DIR,f'player_walk_{i}.png')).convert_alpha() for i in range(3)]
+            self.images['enemy']=[_pg.image.load(os.path.join(IMG_DIR,f'enemy_{i}.png')).convert_alpha()for i in range(3)]
+            self.images['bullet_player']=_pg.image.load( os.path.join(IMG_DIR,'bullet_player.png')).convert_alpha()
+            self.images['bullet_enemy']=_pg.image.load(os.path.join(IMG_DIR,'bullet_enemy.png')).convert_alpha()
+            self.images['wall']=_pg.image.load(os.path.join(IMG_DIR,'wall_metal.png')).convert_alpha()
+        except Exception as e:
+            print('image load', e)
