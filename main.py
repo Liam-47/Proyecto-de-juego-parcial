@@ -63,4 +63,10 @@ class Game:
             print('Sound load', e)
             pygame.joystick.init(); self.joystick=None
             if pygame.joystick.get_count()>0: self.joystick=pygame.joystick.Joystick(0); self.joystick.init()
+            self.runnig=True; self.paused=False; self.score=0; self.level=1
+
+    def spawn_enemies(self,n):
+        self.enemies.empty()
+        for i range(n):
+            ex=random.randint(3,MAP_W-4); ey=random.randint(3,MAP_H-4)
     
