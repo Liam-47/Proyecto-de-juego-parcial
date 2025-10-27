@@ -51,3 +51,16 @@ class Game:
             self.images['wall']=_pg.image.load(os.path.join(IMG_DIR,'wall_metal.png')).convert_alpha()
         except Exception as e:
             print('image load', e)
+
+        #sonidos
+        try:
+            self.fx_chan = pygame.mixer.Channel(1); self.enemy_chan = pygame.mixer.Channel(2)
+            self.shoot_snd = pygame.mixer.Sound(os.path.join(SND_DIR,'shoot.wav'))
+            self.hit_snd = pygame.mixer.Sound(os.path.join(SND_DIR,'hit.wav'))
+            self.death_snd = pygame.mixer.Sound(os.path.join(SND_DIR,'death.way'))
+            pygame.mixer.music.load(os.path.join(MUS_DIR,'bg_loop.wav')); pygame.mixer.music.set_volume(0.12); pygame.mixer.music.play(-1)
+        except Exception as e:
+            print('Sound load', e)
+            pygame.joystick.init(); self.joystick=None
+            if pygame.joystick.get_count()>0: self.joystick=pygame.joystick.Joystick(0); self.joystick.init()
+    
