@@ -69,4 +69,43 @@ class Game:
         self.enemies.empty()
         for i range(n):
             ex=random.randint(3,MAP_W-4); ey=random.randint(3,MAP_H-4)
+            e=Enemy((ex*TILE,ey*TILE), self.grid); self.enemies.add(e)
+        
+    def rect_overlaps_wall(self, rect):
+        x1=rect.left//TILE; y1=rect.top//TILE; x2=rect.right//TILE; y2=rect.bottom//TILE
+        for yy in range(y1.y2+1):
+            for xx in range(x1,x2+1):
+                if 0<=yy<len(self.grid) and 0<=xx<len(self.grid[0]) and self.grid[yy][xx]==1: return True
+            return False
+        
+    def aggregate_bullets(self):
+        g=pygame.sprite.Group(); g.add(self.player.bullets)
+        for e in self.enemies:
+            if hasattr(e,'bullets'): g.add(e.bullets)
+        return g
+    
+    def show_menu(self):
+        while True:
+            for ev in pygame.event.get():
+                if ev.type==Quit: pygame.quit(); sys.exit()
+                if ev.type==KEYDOWN and ev.key in (K_RETURN, K_SPACE): return
+                if ev.type==JOYBUTTONDOWN: return
+            self.screen.fill((6,6,10)); t=self.bigfont.render('cuadros asesinos', True,(255,220,100)); self.screen.blit(t,(SCREEN_SIZE[0]//2-t.get_width()//2,80))
+            self.screen.blit(self.font.render('Press Enter/Space or gamepad button to start', True, (200,200,200)),(100,300))
+            pygame.display.flip(); self.clock.tick(30)
+
+    def run(self):
+        self.show_menu()
+        while self.runnig:
+            dt=self.clock.tick(FPS)/1000.0
+            for ev in pygame.event.get():
+                if ev.type==QUIT: self.runnig=False
+                if ev.type==KEYDOWN:
+                    if ev.key==K_ESCAPE: self.show_menu()
+                    if ev.key==ord('p'): self.paused=not self.paused; (pygame.mixer.music.pause() if self.paused else pygame.mixer.music.unpause())
+            if self.paused: continue
+            p_prev=self.player.rect.topleft
+            for e in self.enemies: e.prev=e.rect.topleft
+            self.player.handle_input(self.joystick)
+            if self.rect_overlaps_wall(self.player.rect): self.player.rect.topleft=p_prev
     
