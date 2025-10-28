@@ -108,4 +108,67 @@ class Game:
             for e in self.enemies: e.prev=e.rect.topleft
             self.player.handle_input(self.joystick)
             if self.rect_overlaps_wall(self.player.rect): self.player.rect.topleft=p_prev
+            for e in list(self.enemies):
+                e.update(self.player, dt)
+                if self.rect_overlaps_wall(e.rect): e.rect.topleft=e.prev
+            bullets=self.aggregate_bullets()
+            for b in list(bullets):
+                b.update()
+                if self.rect_overlaps_wall(b.rect): b.kill(); continue
+                if getattr(b,'owner', None)=='player':
+                    for en in list(self.enemies):
+                        if b.rect.colliderect(en.rect):
+                             en.health-=1; self.fx_chan.play(self.hit_snd); b.kill()
+                             if en.health<=0: self.enemy_chan.play(self.death_snd); en.kill(); self.score+=100
+                             break
+                        elif getattr(b,'owne', None)=='enemy':
+                            if b.rect.colliderect(self.player.rect):
+                                self.player.health-=1; self.fx_chan.play(self.hit_snd); b.kill()
+                                if self.player.health<=0:
+                                    self.enemy_chan.play(self.death_snd); self.shoot_end('PERDISTE'); return
+                    self.player.update(); [e.update(self.player, dt) for e in self.enemies]
+                    #draw
+                    self.screen.fill((10,10,12))
+                    for y,row in enumerate(self.grid):
+                        for x,c in enumerate(row):
+                            if c==1:
+                                if 'wall' in self.images:
+                                    self.screen.blit(self.images['wall'], (x*TILE,y*TILE))
+                                else:
+                                    pygame.draw.rect(self.screen,(80,80,80),(x*TILE,y*TILE,TILE,TILE))
+                    for s in [self.player]+list(self.screen): self.screen.blit(s.image, s.rect)
+                    for b in list(bullets): self.screen.blit(b.image, b.rect)
+                    self.draw_ui(); pygame.display.flip()
+                    if len(self.enemies)==0:
+                        self.score+= 500*self.level; self.level+=1; self.spawn_enemies(3+self.level*2)
+                    if self.player.health<=0: self.shoot_end('PERDISTE'); return
+            pygame.quit()
+
+        def draw_ui(self):
+            self.screen.blit(self.font.render(f'Score:{self.Score} Level:{self.level}', True, (240,240,240)), (8,8))
+            maxw=200; hperc=max(0,self.player.health)/self.player.max_health
+            pygame.draw.rect(self.screen,(60,60,60),(SCREEN_SIZE[0]-maxw-10,10,maxw,18))
+            pygame.draw.rect(self.screen,(200,50,50),(SCREEN_SIZE[0]-maxw-10,10,int(maxw*hperc),18))
+            self.screen.blit(self.font.render(f'HP:{self.player.health}/{self.player.max_health}', True, (255,255,255)),(SCREEN_SIZE[0]-maxw-10,32))
+
+        def show_end(self,title):
+            while True:
+                for ev in pygame.event.get():
+                    if ev.type==quit: pygame.quit(); sys.exit()
+                    if ev.type==KEYDOWN:
+                        if ev.key==k_r:
+                            python=sys.executable; os.execl(python, python, *sys.argv)
+                        if ev.key==K_ESCAPE: pygame.quit(); sys.exit()
+                self.screen.fill((5,5,8)); t=self.bigfont.render(title, True,(255,50,50)); self.screen.blit(t,(SCREEN_SIZE[0]//2-t.get_width()//2,120))
+                self.screen.blit(self.font.render('Press R to restart or ESC to exit', True, (240,240,240)),(SCREEN_SIZE[0]//2-180,200))
+                pygame.display.flip(); self.clock.tick(30)
+
+if __name__=='__main__':
+    Game().run()
+            
+
+
+
+
+
     
